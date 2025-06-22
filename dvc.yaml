@@ -1,0 +1,37 @@
+stages:
+  data_preparation:
+    cmd: python load_data_tensorflow.py --save_processed
+    deps:
+      - scripts/load_data_tensorflow.py
+      - images/
+    outs:
+      - data/train_df.pkl
+      - data/valid_df.pkl
+      - data/test_df.pkl
+      - data/label_encoder.pkl
+
+  train_model:
+    cmd: python train_tensorflow.py --epochs 10 --save_model
+    deps:
+      - scripts/train_tensorflow.py
+      - scripts/model_tensorflow.py
+      - data/train_df.pkl
+      - data/valid_df.pkl
+      - model_tensorflow.py
+    outs:
+      - models/final_model.h5
+      - results/training_history.pkl
+
+  evaluate_model:
+    cmd: python evaluate_tensorflow.py --output_dir results
+    deps:
+      - scripts/evaluate_tensorflow.py
+      - scripts/model_tensorflow.py
+      - data/test_df.pkl
+      - data/label_encoder.pkl
+      - models/final_model.h5
+      - results/training_history.pkl
+    outs:
+      - results/confusion_matrix.png
+      - results/roc_curve.png
+      - results/training_history_plot.png
