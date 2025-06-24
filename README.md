@@ -6,7 +6,7 @@ Las imagenes utilizadas para el entrenamiento se encuentra en el siguiente repos
 https://www.kaggle.com/datasets/hghdhygf/brain-tumor-mri-image-dataset
 
 Pueden visualizar como funciona nuestro clasificador en la siguiente página de Streamlit:<br>
-https://tumordetectpytorch-mjjigzzap9ihnrgnarsncp.streamlit.app/
+https://tumourdetecttensorflow-tsrzju9feurvizhx7dqgq8.streamlit.app/
 
 
 ## 🚀 Estructura del Proyecto por Bloques
