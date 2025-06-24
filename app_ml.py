@@ -64,7 +64,6 @@ set_background(background_image_path)
 @st.cache_resource
 def load_model_from_url_cached(file_id, model_filename="downloaded_model.h5"):
     if not os.path.exists(model_filename):
-        # Puedes mantener la descarga sin mensajes adicionales si quieres
         url = f'https://drive.google.com/uc?id={file_id}'
         gdown.download(url, model_filename, quiet=False)
     model = load_model(model_filename)
