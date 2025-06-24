@@ -10,7 +10,7 @@ import os
 import gdown
 import base64
 
-# Path to your background image
+# Path a tu imagen de fondo
 background_image_path = "medical_laboratory.jpg"
 
 def get_base64_image(image_path):
@@ -57,30 +57,38 @@ def set_background(image_path):
     """
     st.markdown(css, unsafe_allow_html=True)
 
+# Establece el fondo
 set_background(background_image_path)
 
-def load_model_from_url(file_id):
-    url = f'https://drive.google.com/uc?id={file_id}'
-    with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as tmp_file:
-        gdown.download(url, tmp_file.name, quiet=False)
-        model = load_model(tmp_file.name)
-        os.unlink(tmp_file.name)
+# Función para cargar el modelo con cache (más eficiente)
+@st.cache_resource
+def load_model_from_url_cached(file_id, model_filename="downloaded_model.h5"):
+    if not os.path.exists(model_filename):
+        st.info("Descargando el modelo... Esto puede tardar un momento.")
+        url = f'https://drive.google.com/uc?id={file_id}'
+        gdown.download(url, model_filename, quiet=False)
+        st.success("Modelo descargado con éxito!")
+    st.info("Cargando el modelo...")
+    model = load_model(model_filename)
+    st.success("¡Modelo listo para usar!")
     return model
 
+# ID del modelo en Google Drive
 file_id = '1qLS6t1a5R3hk5PtpvUxuQQjAHnDcUFeU'
 
+# Carga del modelo (con cache)
+model = load_model_from_url_cached(file_id)
 
-with st.spinner("Loading model... This might take a moment."):
-    model = load_model_from_url(file_id)
-
+# Clases posibles
 class_labels = ["Healthy", "Tumor"]
 
-# Initialize session state
+# Estado de sesión
 if 'uploaded_image' not in st.session_state:
     st.session_state['uploaded_image'] = None
 if 'prediction' not in st.session_state:
     st.session_state['prediction'] = None
 
+# Función para preprocesar la imagen
 def preprocess_image(image, target_size=(224, 224)):
     image = image.resize(target_size)
     image_array = img_to_array(image)
@@ -88,22 +96,22 @@ def preprocess_image(image, target_size=(224, 224)):
     from tensorflow.keras.applications.resnet import preprocess_input
     return preprocess_input(image_array)
 
-# Title
+# Título con estilos
 st.markdown("""
 <div class="main-title">
-    <h1>🧠 Deep Learning for Detecting Brain Tumour 🔎</h1>
+    <h1>🧠 Deep Learning para Detectar Tumor Cerebral 🔎</h1>
 </div>
 """, unsafe_allow_html=True)
 
-# --- Layout with two columns for upload and display ---
+# Diseño en columnas para subir y mostrar imagen
 col1, col2 = st.columns([1, 1])
 
 with col1:
-    uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+    uploaded_file = st.file_uploader("Elige una imagen...", type=["jpg", "jpeg", "png"])
 
-    predict_button = st.button("Predict")
+    predict_button = st.button("Predecir")
 
-    # Check if a new file is uploaded; if so, reset prediction
+    # Si se sube una nueva imagen, reiniciar predicción
     if uploaded_file:
         if st.session_state.get('uploaded_image') != uploaded_file:
             st.session_state['uploaded_image'] = uploaded_file
@@ -116,16 +124,16 @@ with col1:
 with col2:
     if uploaded_file:
         image = Image.open(uploaded_file).convert('RGB')
-        st.image(image, caption='Uploaded Image.', width=240)
+        st.image(image, caption='Imagen subida.', width=240)
 
-# --- Prediction logic ---
+# Lógica para predecir
 if predict_button and uploaded_file:
-    # Load and preprocess image
+    # Preprocesar y predecir
     image = Image.open(uploaded_file).convert('RGB')
     processed_image = preprocess_image(image)
     predictions = model.predict(processed_image)
 
-    # Interpret predictions
+    # Interpretar predicciones
     if predictions.shape[1] == 1:
         pred_value = predictions[0][0]
         if pred_value >= 0.5:
@@ -140,22 +148,22 @@ if predict_button and uploaded_file:
         predicted_class = class_labels[predicted_index]
         confidence = probs[predicted_index]
     else:
-        st.write("Unexpected model output shape:", predictions.shape)
-        predicted_class = "Unknown"
+        st.write("Forma inesperada de salida del modelo:", predictions.shape)
+        predicted_class = "Desconocido"
         confidence = 0.0
 
-    # Save prediction to session state
+    # Guardar predicción en el estado
     st.session_state['prediction'] = {
         'class': predicted_class,
         'confidence': confidence
     }
 
-# --- Display prediction result ---
+# Mostrar resultados
 if st.session_state['prediction']:
     pred = st.session_state['prediction']
     st.markdown(f"""
     <div class="prediction-box">
-        <h3>Prediction Result:</h3>
-        <p><strong>{pred['class']}</strong> with confidence <strong>{pred['confidence']*100:.2f}%</strong></p>
+        <h3>Resultado de la Predicción:</h3>
+        <p><strong>{pred['class']}</strong> con confianza <strong>{pred['confidence']*100:.2f}%</strong></p>
     </div>
     """, unsafe_allow_html=True)
